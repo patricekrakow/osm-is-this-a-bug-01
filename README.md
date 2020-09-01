@@ -45,7 +45,14 @@ where
 
 ```text
 $ kubectl apply -f mfst-1.yaml
-...
+namespace/demo created
+serviceaccount/service-v created
+deployment.apps/service-v-deployment created
+service/service-v created
+service/alpha-api created
+serviceaccount/client-u created
+deployment.apps/client-u-deployment created
+service/client-u created
 ```
 
 <details><summary>Click to expand <code>mfst-1.yaml</code></summary>
@@ -171,8 +178,13 @@ spec:
 
 ```text
 $ kubectl get pods -n demo
-...
-$ kubectl logs ... -n demo | tail
+NAME                                   READY   STATUS    RESTARTS   AGE
+client-u-deployment-6ddf84cf4d-vtb2n   1/1     Running   0          28s
+service-v-deployment-d6b794b8f-2prxq   1/1     Running   0          28s
+$ kubectl logs client-u-deployment-6ddf84cf4d-vtb2n -n demo | tail
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-2prxq
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-2prxq
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-2prxq
 ...
 ```
 
@@ -193,11 +205,16 @@ OSM installed successfully in namespace [osm-system] with mesh name [osm]
 $ osm namespace add demo
 Namespace [demo] successfully added to mesh [osm]
 $ kubectl delete pods --all -n demo
-pod "client-x-..." deleted
-pod "service-a-..." deleted
+pod "client-u-deployment-6ddf84cf4d-vtb2n" deleted
+pod "service-v-deployment-d6b794b8f-2prxq" deleted
 $ kubectl get pods -n demo
-...
-$ kubectl logs ... -n client-x demo | tail
+NAME                                   READY   STATUS    RESTARTS   AGE
+client-u-deployment-6ddf84cf4d-99rtn   2/2     Running   0          59s
+service-v-deployment-d6b794b8f-wrhff   2/2     Running   0          57s
+$ kubectl logs client-u-deployment-6ddf84cf4d-99rtn client-u -n demo | tail
+[INFO] get /path-01 | 404
+[INFO] get /path-01 | 404
+[INFO] get /path-01 | 404
 ...
 ```
 
@@ -211,7 +228,8 @@ client-u-pod --> 200 { get, alpha-api, /path-01 } | proxy | service-v-pod
 
 ```text
 $ kubectl apply -f mfst-2.yaml
-...
+httproutegroup.specs.smi-spec.io/alpha-api-routes created
+traffictarget.access.smi-spec.io/allow-client-u-to-service-v-through-alpha-api-routes created
 ```
 
 <details><summary>Click to expand <code>mfst-2.yaml</code></summary>
@@ -257,9 +275,13 @@ spec:
 </details>
 
 ```text
-$ kubectl get pods -n demo
-...
-$ kubectl logs ... -n demo | tail
+$ kubectl logs client-u-deployment-6ddf84cf4d-99rtn client-u -n demo | tail
+[INFO] get /path-01 | 404
+[INFO] get /path-01 | 404
+[INFO] get /path-01 | 404
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-wrhff
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-wrhff
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-wrhff
 ...
 ```
 
@@ -274,7 +296,9 @@ client-u-pod --> 200 { get, alpha-api, /path-01 } | proxy | service-v-pod
 
 ```text
 $ kubectl apply -f mfst-3.yaml
-...
+serviceaccount/service-w created
+deployment.apps/service-w-deployment created
+service/service-w created
 ```
 
 <details><summary>Click to expand <code>mfst-3.yaml</code></summary>
@@ -334,8 +358,17 @@ spec:
 </details>
 
 ```text
-$ kubectl get pods -n demo
-...
-$ kubectl logs ... -n demo | tail
-...
+$ kubectl logs client-u-deployment-6ddf84cf4d-99rtn client-u -n demo | tail
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-wrhff
+[INFO] get /path-01 | Hello from get /path-01 | service-w (1.0.0) | service-w-deployment-76d497c58f-kjqs8
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-wrhff
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-wrhff
+[INFO] get /path-01 | Hello from get /path-01 | service-w (1.0.0) | service-w-deployment-76d497c58f-kjqs8
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-wrhff
+[INFO] get /path-01 | Hello from get /path-01 | service-w (1.0.0) | service-w-deployment-76d497c58f-kjqs8
+[INFO] get /path-01 | Hello from get /path-01 | service-v (1.0.0) | service-v-deployment-d6b794b8f-wrhff
+[INFO] get /path-01 | Hello from get /path-01 | service-w (1.0.0) | service-w-deployment-76d497c58f-kjqs8
+[INFO] get /path-01 | Hello from get /path-01 | service-w (1.0.0) | service-w-deployment-76d497c58f-kjqs8
 ```
+
+**It is unexpected to have responses from the _Pod_ `service-w-deployment-76d497c58f-kjqs8` while there is no _TrafficTarget_ defined with its _ServiceAccount_ `service-w`.**
