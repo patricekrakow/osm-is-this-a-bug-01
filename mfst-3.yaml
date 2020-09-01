@@ -1,0 +1,49 @@
+# mfst-3.yaml
+---
+# Deploy 'service-w' Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service-w
+  namespace: demo
+---
+# Deploy 'service-w-deployment' Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-w-deployment
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-w
+      api: alpha-api
+  template:
+    metadata:
+      labels:
+        app: service-w
+        api: alpha-api
+    spec:
+      serviceAccountName: service-w
+      containers:
+      - name: service-w
+        image: patrice1972/service-w:1.0.0
+        ports:
+        - name: service-w-port
+          protocol: TCP
+          containerPort: 3000
+---
+# Deploy 'service-w' Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-w
+  namespace: demo
+spec:
+  selector:
+    app: service-w
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000

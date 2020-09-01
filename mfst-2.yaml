@@ -1,0 +1,35 @@
+# mfst-2.yaml
+---
+apiVersion: specs.smi-spec.io/v1alpha3
+kind: HTTPRouteGroup
+metadata:
+  name: alpha-api-routes
+  namespace: demo
+spec:
+  matches:
+  - name: get-path-01
+    pathRegex: /path-01
+    methods:
+    - GET
+---
+# Deploy the 'allow-client-u-to-service-v-through-alpha-api-routes' TrafficTarget
+kind: TrafficTarget
+apiVersion: access.smi-spec.io/v1alpha2
+metadata:
+  name: allow-client-u-to-service-v-through-alpha-api-routes
+  namespace: demo
+spec:
+  destination:
+    kind: ServiceAccount
+    name: service-v
+    namespace: demo
+    port: 3000
+  rules:
+  - kind: HTTPRouteGroup
+    name: alpha-api-routes
+    matches:
+    - get-path-01
+  sources:
+  - kind: ServiceAccount
+    name: client-u
+    namespace: demo

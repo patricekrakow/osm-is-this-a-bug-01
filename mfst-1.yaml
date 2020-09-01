@@ -1,0 +1,114 @@
+# mfst-1.yaml
+---
+# Deploy 'demo' Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+# Deploy 'service-v' Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service-v
+  namespace: demo
+---
+# Deploy 'service-v-deployment' Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-v-deployment
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-v
+      api: alpha-api
+  template:
+    metadata:
+      labels:
+        app: service-v
+        api: alpha-api
+    spec:
+      serviceAccountName: service-v
+      containers:
+      - name: service-v
+        image: patrice1972/service-v:1.0.0
+        ports:
+        - name: service-v-port
+          protocol: TCP
+          containerPort: 3000
+---
+# Deploy 'service-v' Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-v
+  namespace: demo
+spec:
+  selector:
+    app: service-v
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+---
+# Deploy 'alpha-api' Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: alpha-api
+  namespace: demo
+spec:
+  selector:
+    api: alpha-api
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+---
+# Deploy 'client-u' Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: client-u
+  namespace: demo
+---
+# Deploy 'client-u-deployment' Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-u-deployment
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-u
+  template:
+    metadata:
+      labels:
+        app: client-u
+    spec:
+      serviceAccountName: client-u
+      containers:
+      - name: client-u
+        image: patrice1972/client-u:1.0.0
+        env:
+        - name: API_HOST
+          value: "alpha-api.demo"
+---
+# Deploy 'client-u' (dummy) Service [Required by OSM]
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-u
+  namespace: demo
+spec:
+  selector:
+    app: client-u
+  ports:
+  - protocol: TCP
+    port: 9999
+    name: dummy-unused-port
